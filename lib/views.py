@@ -153,7 +153,7 @@ def page(title, body, top_lang="tamil"):
         "</head><body>"
         '<header class="nav" id="bar"><div class="nav-inner">'
         '<a class="brand" href="/" aria-label="EinthuFlix home">'
-        '<img class="brand-mark" src="/static/mark.png" alt="" width="28"'
+        '<img class="brand-mark" src="/static/mark.png" alt="" width="32"'
         ' height="28"><span class="brand-word">Einthu<em>Flix</em></span>'
         '<span class="brand-tag">South Asian cinema</span></a>'
         '<nav class="nav-links">%s</nav>'
