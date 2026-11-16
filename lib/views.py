@@ -150,6 +150,7 @@ def page(title, body, top_lang="tamil"):
         'Kannada, Hindi and English films and shows.">'
         "<title>%s</title>"
         '<link rel="stylesheet" href="/static/style.css">'
+        '<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>'
         "</head><body>"
         '<header class="nav" id="bar"><div class="nav-inner">'
         '<a class="brand" href="/" aria-label="EinthuFlix home">'
