@@ -940,6 +940,134 @@ document.addEventListener("click", function (event) {
   if (player) player.classList.add("playing");
 });
 
+/* ------------------------------------------------------------ home rows */
+
+/* The rows of the home page in the order somebody chose on /settings. Kept in
+ * this browser beside the list: which shelf you want first is a preference,
+ * not something to carry to another device. */
+const HOME_ROWS_KEY = "iml:home-rows";
+
+function savedRows() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(HOME_ROWS_KEY) || "[]");
+    return Array.isArray(raw)
+      ? raw.filter((row) => row && typeof row.id === "string")
+      : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function storeRows(rows) {
+  try {
+    localStorage.setItem(HOME_ROWS_KEY, JSON.stringify(rows));
+  } catch (e) {
+    /* private mode: the choice lasts this page only */
+  }
+}
+
+/* Hide and reorder the server-rendered shelves. A row the saved order has
+ * never seen keeps its shipped place, after the ones it knows. */
+function applyHomeRows() {
+  const host = document.querySelector("[data-rows]");
+  if (!host) return;
+  const rows = savedRows();
+  if (!rows.length) return;
+
+  const sections = new Map();
+  host.querySelectorAll("[data-row]").forEach((node) => {
+    sections.set(node.dataset.row, node);
+  });
+
+  const placed = new Set();
+  rows.forEach((row) => {
+    const node = sections.get(row.id);
+    if (!node) return;
+    node.hidden = row.on === false;
+    host.appendChild(node);
+    placed.add(row.id);
+  });
+  sections.forEach((node, id) => {
+    if (!placed.has(id)) host.appendChild(node);
+  });
+}
+
+function wireRowSettings() {
+  const list = document.querySelector("[data-row-list]");
+  if (!list) return;
+
+  const items = [...list.querySelectorAll("[data-row-id]")];
+  const defaults = items.map((li) => ({
+    id: li.dataset.rowId,
+    title: li.dataset.rowTitle,
+    on: true
+  }));
+  const shipped = new Map(defaults.map((row) => [row.id, row]));
+
+  let rows = [];
+  savedRows().forEach((row) => {
+    if (!shipped.has(row.id) || rows.some((one) => one.id === row.id)) return;
+    rows.push({
+      id: row.id,
+      title: shipped.get(row.id).title,
+      on: row.on !== false
+    });
+  });
+  defaults.forEach((row) => {
+    if (!rows.some((one) => one.id === row.id)) rows.push(row);
+  });
+
+  function paintRows() {
+    rows.forEach((row) => {
+      const li = list.querySelector('[data-row-id="' + row.id + '"]');
+      if (!li) return;
+      const box = li.querySelector("input");
+      if (box) box.checked = row.on !== false;
+      list.appendChild(li);
+    });
+  }
+
+  function save() {
+    storeRows(rows);
+    paintRows();
+  }
+
+  list.addEventListener("change", (event) => {
+    const box = event.target;
+    if (box.type !== "checkbox") return;
+    const li = box.closest("[data-row-id]");
+    if (!li) return;
+    const row = rows.find((one) => one.id === li.dataset.rowId);
+    if (!row) return;
+    row.on = box.checked;
+    save();
+  });
+
+  list.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-move]");
+    if (!button) return;
+    const li = button.closest("[data-row-id]");
+    const index = rows.findIndex((one) => one.id === li.dataset.rowId);
+    const next = index + Number(button.dataset.move);
+    if (index < 0 || next < 0 || next >= rows.length) return;
+    const moved = rows.splice(index, 1)[0];
+    rows.splice(next, 0, moved);
+    save();
+    const box = list.querySelector('[data-row-id="' + moved.id + '"] input');
+    if (box) box.focus();
+  });
+
+  const reset = document.querySelector("[data-rows-reset]");
+  if (reset) {
+    reset.addEventListener("click", () => {
+      rows = defaults.map((row) => Object.assign({}, row));
+      save();
+    });
+  }
+
+  paintRows();
+}
+
 normaliseList();
 paint();
 wireAuth();
@@ -948,6 +1076,8 @@ wirePlayer();
 wireVidspark();
 wireRails();
 wireBar();
+applyHomeRows();
+wireRowSettings();
 window.addEventListener("pageshow", () => {
   paint();
   wireRails();

@@ -1630,6 +1630,36 @@ select option { background: var(--ink-2); color: var(--paper); }
 .radio input { accent-color: var(--saffron); width: 15px; height: 15px; }
 .radio:hover { color: var(--paper); }
 
+/* ------------------------------------------------------------ home rows */
+
+.row-list {
+  list-style: none;
+  margin: 16px 0 18px;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.row-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 2px;
+  border-bottom: 1px solid var(--line);
+}
+.row-toggle {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  flex: 1;
+  min-width: 0;
+  font-size: 14.5px;
+  color: var(--paper-dim);
+  cursor: pointer;
+}
+.row-toggle input { accent-color: var(--saffron); width: 15px; height: 15px; }
+.row-toggle:hover { color: var(--paper); }
+.row-move { display: flex; gap: 6px; flex: none; }
+.row-move .btn { min-width: 30px; padding: 5px 9px; line-height: 1; }
+
 .setlang { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 
 .auth-form {

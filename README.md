@@ -26,6 +26,10 @@ built, so it is never stored and never reused: opening the page again signs a
 fresh one. A film that has been taken down has no player element to sign, and
 the page says so instead of showing an empty frame.
 
+**Home rows.** The home page opens with Continue watching and My list, then
+the discovery rows for the chosen language. Settings → Home page rows picks
+which of them appear and in what order, and the choice is kept in this browser.
+
 **My List.** The + on any poster saves the film locally, instantly, with no
 account needed. Removing one writes a timestamped tombstone so a stale device
 cannot bring it back.
@@ -77,7 +81,7 @@ and they share no catalogue and no account database.
 | --- | --- | --- |
 | Library | South Asian cinema only — eight Indian languages | Everything the big streaming services carry, across 35 services |
 | Where titles come from | einthusan's language indexes | Streaming Catalogs (Stremio) rows, metadata from Cinemeta |
-| Playback | einthusan's signed mp4 in a native player | VidSpark embed by IMDb id |
+| Playback | einthusan's signed mp4 in a native player | CineSrc embed by TMDB id |
 | Browsing | Language tabs, Most Watched, Staff Picks, Recently Added | One row per service, plus popular films and shows on search |
 | Search | Prefix search inside one language | Full-library search by title |
 | Best for | Finding a Tamil, Telugu, Malayalam, Kannada, Hindi, Bengali, Marathi or Punjabi film | Finding a specific film or show from Netflix, Prime Video, JioHotstar, Disney+, HBO Max, Zee5 and the rest |
