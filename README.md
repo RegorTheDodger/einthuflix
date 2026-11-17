@@ -86,6 +86,6 @@ and they share no catalogue and no account database.
 | Search | Prefix search inside one language | Full-library search by title |
 | Best for | Finding a Tamil, Telugu, Malayalam, Kannada, Hindi, Bengali, Marathi or Punjabi film | Finding a specific film or show from Netflix, Prime Video, JioHotstar, Disney+, HBO Max, Zee5 and the rest |
 
-RogFlix is the broader shelf; EinthuFlix is the deeper one. Both run the same
+RogFlix is the broader shelf while EinthuFlix is the deeper one. Both run the same
 player behaviour, the same My List and continue watching, and the same
 merge-on-sync accounts described above.
