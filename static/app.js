@@ -20,8 +20,12 @@ const LS_CATALOG = "iml:catalog";
 const LS_REMOVED = "iml:removed";
 const LS_DROPPED = "iml:dropped";
 
-/* past this fraction a film counts as finished and drops off continue */
-const DONE_AT = 0.95;
+/* A film is finished when the player reports the last couple of minutes,
+ * not when it passes a fraction of the duration. These streams often claim a
+ * shorter runtime than the film itself, and 95% of that short number can be
+ * the middle of the film — which used to delete a live continue-watching card
+ * the moment somebody seeked forward. */
+const FINISH_LEFT = 90;
 /* a title earns a card in continue watching only after this much playback */
 const MIN_WATCH = 10;
 /* under this many seconds it is not worth remembering */
@@ -150,8 +154,8 @@ function setResume(id, seconds, duration, meta) {
   if (!duration || duration < 1) {
     return;
   }
-  const frac = seconds / duration;
-  if (seconds < MIN_SECONDS || frac >= DONE_AT) {
+  const left = duration - seconds;
+  if (seconds < MIN_SECONDS || (left >= 0 && left <= FINISH_LEFT)) {
     delete p[id];
   } else {
     if (meta) remember(meta);
@@ -255,6 +259,7 @@ function continueWatching() {
       if (!meta.title) return null;
       if (!meta.url) meta.url = "/watch/" + id;
       meta.frac = entry.duration ? entry.seconds / entry.duration : 0;
+      meta.left = entry.duration ? entry.duration - entry.seconds : null;
       meta.seconds = entry.seconds || 0;
       meta.at = at;
       /* a saved show covers every episode of it, so the + on an episode of a
@@ -268,7 +273,8 @@ function continueWatching() {
     /* ten seconds of playback is what earns a card: a page that was opened
      * and left is not watching, and an entry still sitting at zero stays off
      * the shelf even if an older build saved one */
-    .filter((m) => m && m.seconds >= MIN_WATCH && m.frac < DONE_AT)
+    .filter((m) => m && m.seconds >= MIN_WATCH &&
+                   (m.left == null || m.left > FINISH_LEFT))
     .sort((a, b) => b.at - a.at)
     .slice(0, 24);
 }
@@ -601,9 +607,11 @@ function wireVidspark() {
 
   function logTime(now, duration) {
     lastKnown = { now: now, duration: duration };
-    /* the same point the rail treats as finished, so an episode the player
-     * never formally "ended" still stops haunting continue watching */
-    if (duration > 0 && now / duration >= DONE_AT) {
+    /* the last stretch only, so an episode the player never formally
+     * "ended" still stops haunting continue watching — and a seek into a film
+     * whose duration is reported short is not mistaken for finishing it */
+    const left = duration - now;
+    if (duration > 0 && left >= 0 && left <= FINISH_LEFT) {
       markFinished(id, meta);
       paint();
       syncAccount();

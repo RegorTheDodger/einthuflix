@@ -80,8 +80,9 @@ cannot bring it back.
 **Continue watching.** The player writes a resume position, and the shelf shows
 what is part-watched, most recent first. A title earns a card after ten seconds
 of real playback; a jump longer than six seconds counts as a seek, not watching;
-the position is saved at most every four seconds; and at 95% the film counts as
-finished and leaves the shelf.
+the position is saved at most every four seconds; and in the player's last
+minute and a half the film counts as finished and leaves the shelf (a share of
+the reported duration would misfire on streams that claim a shorter runtime).
 
 **Convert.** A link from einthusan — or just its four-character id — becomes a
 playable page, with an optional check that the signed file really exists at the
