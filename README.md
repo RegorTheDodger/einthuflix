@@ -72,8 +72,10 @@ so instead of showing an empty frame.
 **Home rows.** Continue watching and My list open the home page; the discovery
 rows for the chosen language follow. Settings → Home page rows chooses which rows
 appear and in what order, kept in the browser beside your list. The carousel at
-the top draws its films from those rows and drops the ones that are switched
-off; with every discovery row hidden it gives way to the search banner.
+the top opens on your own pick — the newest film on My list, or the last one you
+played — and the catalogue films follow, drawn from those rows and dropping the
+ones that are switched off. With no pick and every discovery row hidden it gives
+way to the search banner.
 
 **Carousel speed.** Each film holds for ten seconds with a countdown along the
 bottom edge, and a dot per film to jump straight to one. Settings → Carousel

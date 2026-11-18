@@ -463,12 +463,64 @@ function storeDwell(seconds) {
   }
 }
 
+/* The reel opens on the visitor's own pick: the newest film on their list, or
+ * the last one they played. It is theirs rather than a catalogue row, so no row
+ * setting can filter it out; everything after it is the usual carousel. */
+function personalSlide(host) {
+  const carousel = host.querySelector("[data-bb-carousel]");
+  if (!carousel) return;
+
+  let item = getList()[0] || null;
+  let kicker = "From your list";
+  if (!item) {
+    item = continueWatching()[0] || null;
+    kicker = "Continue watching";
+  }
+  if (!item) return;
+
+  const href = esc(watchHref(item));
+  const cover = item.cover ? esc(item.cover) : "";
+  const art = cover
+    ? '<div class="bb-art" aria-hidden="true"><img src="' + cover +
+      '" alt=""></div>'
+    : "";
+  const poster = cover
+    ? '<div class="bb-poster" aria-hidden="true"><img src="' + cover +
+      '" alt=""></div>'
+    : "";
+  const chips = [item.year, item.lang].filter(Boolean)
+    .map((bit) => '<span class="bb-chip">' + esc(bit) + "</span>").join("");
+
+  const slide = document.createElement("section");
+  slide.className = "bb is-live";
+  slide.dataset.slide = "personal";
+  slide.innerHTML =
+    art +
+    '<div class="bb-scrim" aria-hidden="true"></div>' +
+    '<div class="bb-inner">' +
+    '<p class="bb-kicker">' + esc(kicker) + "</p>" +
+    '<h1 class="bb-title">' + esc(item.title) + "</h1>" +
+    (chips ? '<p class="bb-meta">' + chips + "</p>" : "") +
+    '<div class="bb-actions">' +
+    '<a class="btn play" href="' + href + '">' + SVG_PLAY + "Play</a>" +
+    '<a class="btn ghost" href="' + href + '">More info</a>' +
+    "</div></div>" +
+    poster;
+
+  /* the personal film is the live one, so the server's first slide steps down */
+  host.querySelectorAll("[data-slide].is-live").forEach((one) => {
+    one.classList.remove("is-live");
+  });
+  carousel.insertBefore(slide, carousel.firstChild);
+}
+
 function wireBillboard() {
   const host = document.querySelector("[data-billboard]");
   if (!host) return;
 
   const carousel = host.querySelector("[data-bb-carousel]");
   const fallback = host.querySelector("[data-bb-fallback]");
+  personalSlide(host);
   const hiddenRows = new Set(
     savedRows().filter((row) => row.on === false).map((row) => row.id)
   );
