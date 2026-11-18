@@ -109,6 +109,9 @@ erased by an older copy from the other.
   never replaced by a blank.
 - **Finishing or clearing** a title drops the resume point rather than sending a
   device backwards.
+- **Theme and home rows** — one preference stamp, newest change wins, because an
+  accent is a single choice and an order is a whole arrangement rather than
+  something to merge item by item.
 
 Passwords are stored as PBKDF2-HMAC-SHA256 hashes with a per-user salt, and a
 session is a random token whose hash — not the token — is kept. Attempts are

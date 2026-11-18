@@ -19,6 +19,7 @@ const LS_WATCHED = "iml:watched";
 const LS_CATALOG = "iml:catalog";
 const LS_REMOVED = "iml:removed";
 const LS_DROPPED = "iml:dropped";
+const PREFS_AT = "iml:prefs-at";
 
 /* A film is finished when the player reports the last couple of minutes,
  * not when it passes a fraction of the duration. These streams often claim a
@@ -771,6 +772,44 @@ function wireBar() {
 
 /* Account state is merged on the server, so the same login works on both
  * the modern and Lumia clients without exposing the password to JavaScript. */
+/* Theme and row order travel with the account. Both are choices rather than
+ * history, and neither is a list the server can merge item by item, so a
+ * stamp decides which side is newer. */
+function prefsAt() {
+  try {
+    return Number(localStorage.getItem(PREFS_AT)) || 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function touchPrefs() {
+  try {
+    localStorage.setItem(PREFS_AT, String(Date.now()));
+  } catch (e) {
+    /* private mode: the choice lasts this tab only */
+  }
+}
+
+function localPrefs() {
+  return { theme: savedTheme(), rows: savedRows(), at: prefsAt() };
+}
+
+function applyPrefs(prefs) {
+  if (!prefs || !prefs.at || prefs.at <= prefsAt()) return;
+  try {
+    localStorage.setItem(THEME_KEY, prefs.theme || "saffron");
+    if (Array.isArray(prefs.rows) && prefs.rows.length) storeRows(prefs.rows);
+    localStorage.setItem(PREFS_AT, String(prefs.at));
+  } catch (e) {
+    return;
+  }
+  applyTheme(savedTheme());
+  markTheme(savedTheme());
+  applyHomeRows();
+  document.dispatchEvent(new Event("prefs:applied"));
+}
+
 function syncAccount() {
   const askedAt = Date.now();
   fetch("/auth/me", { credentials: "same-origin" })
@@ -783,7 +822,8 @@ function syncAccount() {
         watched: getWatched(),
         catalog: getCatalog(),
         removed: getRemoved(),
-        dropped: getDropped()
+        dropped: getDropped(),
+        prefs: localPrefs()
       };
       return fetch("/api/sync", {
         method: "POST",
@@ -810,6 +850,7 @@ function syncAccount() {
         if ((local[id] || 0) > (synced[id] || 0)) synced[id] = local[id];
       });
       write(LS_DROPPED, synced);
+      applyPrefs(state.prefs);
       paint();
     })
     .catch(() => {
@@ -1042,17 +1083,25 @@ function wireRowSettings() {
   const shipped = new Map(defaults.map((row) => [row.id, row]));
 
   let rows = [];
-  savedRows().forEach((row) => {
-    if (!shipped.has(row.id) || rows.some((one) => one.id === row.id)) return;
-    rows.push({
-      id: row.id,
-      title: shipped.get(row.id).title,
-      on: row.on !== false
+
+  /* Rebuilt from storage when another device's order arrives mid-visit. */
+  function reload() {
+    rows = [];
+    savedRows().forEach((row) => {
+      if (!shipped.has(row.id) || rows.some((one) => one.id === row.id)) return;
+      rows.push({
+        id: row.id,
+        title: shipped.get(row.id).title,
+        on: row.on !== false
+      });
     });
-  });
-  defaults.forEach((row) => {
-    if (!rows.some((one) => one.id === row.id)) rows.push(row);
-  });
+    defaults.forEach((row) => {
+      if (!rows.some((one) => one.id === row.id)) rows.push(row);
+    });
+    paintRows();
+  }
+
+  reload();
 
   function paintRows() {
     rows.forEach((row) => {
@@ -1066,6 +1115,8 @@ function wireRowSettings() {
 
   function save() {
     storeRows(rows);
+    touchPrefs();
+    syncAccount();
     paintRows();
   }
 
@@ -1103,6 +1154,7 @@ function wireRowSettings() {
   }
 
   paintRows();
+  document.addEventListener("prefs:applied", reload);
 }
 
 /* --------------------------------------------------------------- themes */
@@ -1123,20 +1175,22 @@ function applyTheme(name) {
   document.documentElement.setAttribute("data-theme", name || "saffron");
 }
 
+function markTheme(name) {
+  const list = document.querySelector("[data-theme-list]");
+  if (!list) return;
+  list.querySelectorAll("[data-theme-option]").forEach((button) => {
+    button.setAttribute(
+      "aria-pressed",
+      button.dataset.themeOption === name ? "true" : "false"
+    );
+  });
+}
+
 function wireTheme() {
   const list = document.querySelector("[data-theme-list]");
   if (!list) return;
 
-  function mark(name) {
-    list.querySelectorAll("[data-theme-option]").forEach((button) => {
-      button.setAttribute(
-        "aria-pressed",
-        button.dataset.themeOption === name ? "true" : "false"
-      );
-    });
-  }
-
-  mark(savedTheme());
+  markTheme(savedTheme());
   list.addEventListener("click", (event) => {
     const button = event.target.closest("[data-theme-option]");
     if (!button) return;
@@ -1147,7 +1201,9 @@ function wireTheme() {
     } catch (e) {
       /* private mode: the choice lasts this page only */
     }
-    mark(name);
+    touchPrefs();
+    syncAccount();
+    markTheme(name);
   });
 }
 

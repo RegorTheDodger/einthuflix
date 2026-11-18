@@ -29,6 +29,7 @@ MAX_PROGRESS = 1000
 MAX_WATCHED = 1000
 MAX_CATALOG = 1000
 MAX_REMOVED = 500
+MAX_ROWS = 40
 TOMBSTONE_DAYS = 180
 
 # The browser stamps everything with Date.now(), so state travels in
@@ -118,6 +119,7 @@ def empty():
         "watched": {},
         "catalog": {},
         "dropped": {},
+        "prefs": {},
     }
 
 
@@ -130,6 +132,41 @@ def _meta(raw):
     """
     item = _item(raw) or {}
     return {field: value for field, value in item.items() if value}
+
+
+def _merge_prefs(server, incoming):
+    """The accent and the home-row order, which side is newer by its stamp.
+
+    Neither is a list the merge can combine item by item: a theme is one
+    choice and an order is a whole arrangement, so the device that changed it
+    last wins and the other one adopts it.
+    """
+
+    def clean(raw):
+        if not isinstance(raw, dict):
+            return None
+        rows = []
+        raw_rows = raw.get("rows")
+        if isinstance(raw_rows, list):
+            for entry in raw_rows[:MAX_ROWS]:
+                if not isinstance(entry, dict):
+                    continue
+                row_id = _text(entry.get("id"), 60)
+                if not row_id:
+                    continue
+                rows.append({"id": row_id, "on": entry.get("on") is not False})
+        return {
+            "theme": _text(raw.get("theme"), 40),
+            "rows": rows,
+            "at": _at(raw.get("at")),
+        }
+
+    left, right = clean(server), clean(incoming)
+    if not left:
+        return right or {}
+    if not right:
+        return left
+    return left if left["at"] >= right["at"] else right
 
 
 def _merge_removed(sources):
@@ -313,6 +350,7 @@ def merge(server, incoming):
     watchlist = _merge_watchlist([server.get("watchlist"),
                                   incoming.get("watchlist")], removed)
     catalog = _merge_catalog([server.get("catalog"), incoming.get("catalog")])
+    prefs = _merge_prefs(server.get("prefs"), incoming.get("prefs"))
 
     # Finishing a film deletes the resume point locally. If the server still
     # holds the older one, drop it rather than sending the device backwards.
@@ -335,6 +373,7 @@ def merge(server, incoming):
         "watched": watched,
         "catalog": catalog,
         "dropped": dropped,
+        "prefs": prefs,
     }
     return state
 
