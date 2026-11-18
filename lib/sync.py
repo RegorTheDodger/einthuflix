@@ -166,7 +166,15 @@ def _merge_prefs(server, incoming):
         return right or {}
     if not right:
         return left
-    return left if left["at"] >= right["at"] else right
+
+    newer = left if left["at"] >= right["at"] else right
+    older = right if newer is left else left
+    # An empty row list means "never arranged", not "arranged back to the
+    # shipped order" (a reset stores the full default list), so a device that
+    # only changed the accent does not wipe the other one's arrangement.
+    if not newer["rows"] and older["rows"]:
+        newer = dict(newer, rows=older["rows"])
+    return newer
 
 
 def _merge_removed(sources):
