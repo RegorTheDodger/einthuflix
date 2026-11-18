@@ -103,7 +103,8 @@ erased by an older copy from the other.
 - **Continue watching** — newest position wins; once a title is marked started it
   stays started, whichever device said so first.
 - **Watch time** — the newer record supplies the metadata, but play time keeps
-  the larger tally and "finished" stays true once true.
+  the larger tally. "Finished" belongs to the later record, so a film watched
+  again (a newer resume point) stops counting as finished.
 - **Titles and covers** — merged field by field, so a known title or cover is
   never replaced by a blank.
 - **Finishing or clearing** a title drops the resume point rather than sending a

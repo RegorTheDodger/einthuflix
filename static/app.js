@@ -69,6 +69,26 @@ function write(key, value) {
 
 const getList = () => (Array.isArray(read(LS_LIST, [])) ? read(LS_LIST, []) : []);
 const getProgress = () => read(LS_PROGRESS, {}) || {};
+
+/* A sync answer, with anything this device wrote while the request was in
+ * flight put back on top. The reply describes the state the server was sent,
+ * so without this a second saved mid-request is silently dropped and the card
+ * vanishes on the next page. */
+function keepWrittenDuring(server, local, since) {
+  const out = Object.assign({}, server || {});
+  Object.keys(local || {}).forEach((id) => {
+    const entry = local[id];
+    if (!entry || !entry.at || entry.at < since) return;
+    const known = out[id];
+    if (known && (known.at || 0) >= entry.at) return;
+    out[id] = known
+      ? Object.assign({}, entry, {
+          seconds: Math.max(entry.seconds || 0, known.seconds || 0)
+        })
+      : entry;
+  });
+  return out;
+}
 const getWatched = () => read(LS_WATCHED, {}) || {};
 const getCatalog = () => read(LS_CATALOG, {}) || {};
 const getRemoved = () => read(LS_REMOVED, {}) || {};
@@ -165,6 +185,14 @@ function setResume(id, seconds, duration, meta) {
       at: Date.now(),
       meta: meta || (p[id] && p[id].meta) || null
     };
+    /* Watching it again: a finish from an earlier session no longer stands.
+     * It has to be cleared here, not just on screen — the account merge drops
+     * any resume point whose watched record still says finished. */
+    const seen = getWatched();
+    if (seen[id] && seen[id].finished) {
+      seen[id] = Object.assign({}, seen[id], { finished: false, at: Date.now() });
+      write(LS_WATCHED, seen);
+    }
   }
   write(LS_PROGRESS, p);
 }
@@ -744,6 +772,7 @@ function wireBar() {
 /* Account state is merged on the server, so the same login works on both
  * the modern and Lumia clients without exposing the password to JavaScript. */
 function syncAccount() {
+  const askedAt = Date.now();
   fetch("/auth/me", { credentials: "same-origin" })
     .then((response) => response.json())
     .then((account) => {
@@ -768,8 +797,8 @@ function syncAccount() {
       if (!result || !result.state) return;
       const state = result.state;
       write(LS_LIST, state.watchlist || []);
-      write(LS_PROGRESS, state.progress || {});
-      write(LS_WATCHED, state.watched || {});
+      write(LS_PROGRESS, keepWrittenDuring(state.progress, getProgress(), askedAt));
+      write(LS_WATCHED, keepWrittenDuring(state.watched, getWatched(), askedAt));
       write(LS_CATALOG, state.catalog || {});
       write(LS_REMOVED, state.removed || {});
       /* Removing something is this device's decision. Keep the tombstones it

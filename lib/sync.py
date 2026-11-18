@@ -268,7 +268,10 @@ def _merge_watched(sources):
             newer = entry["at"] >= previous["at"]
             merged = dict(entry if newer else previous)
             merged["seconds"] = max(entry["seconds"], previous["seconds"])
-            merged["finished"] = entry["finished"] or previous["finished"]
+            # Finishing is not permanent: the later record wins, so a film
+            # watched again (finished:false, newer stamp) comes back to
+            # continue watching instead of being deleted forever below.
+            merged["finished"] = bool(merged["finished"])
             merged["at"] = max(entry["at"], previous["at"])
             out[movie_id] = merged
     return dict(list(out.items())[:MAX_WATCHED])
@@ -318,9 +321,11 @@ def merge(server, incoming):
         if dropped_at and dropped_at >= progress[movie_id]["at"]:
             del progress[movie_id]
             continue
+        # Only a finish newer than the resume point outranks it; a newer
+        # resume point is the same film being watched again.
         finished = watched.get(movie_id)
         if finished and finished.get("finished"):
-            if finished["at"] >= progress[movie_id]["at"]:
+            if finished["at"] > progress[movie_id]["at"]:
                 del progress[movie_id]
 
     state = {
