@@ -30,6 +30,7 @@ MAX_WATCHED = 1000
 MAX_CATALOG = 1000
 MAX_REMOVED = 500
 MAX_ROWS = 40
+MAX_DWELL = 600
 TOMBSTONE_DAYS = 180
 
 # The browser stamps everything with Date.now(), so state travels in
@@ -134,6 +135,17 @@ def _meta(raw):
     return {field: value for field, value in item.items() if value}
 
 
+def _dwell(value):
+    """Seconds per film in the hero: a whole number, 1 to 600, or 0 = unset."""
+    try:
+        seconds = float(value)
+    except (TypeError, ValueError):
+        return 0
+    if not math.isfinite(seconds) or seconds < 1:
+        return 0
+    return int(min(MAX_DWELL, round(seconds)))
+
+
 def _merge_prefs(server, incoming):
     """The accent and the home-row order, which side is newer by its stamp.
 
@@ -158,6 +170,7 @@ def _merge_prefs(server, incoming):
         return {
             "theme": _text(raw.get("theme"), 40),
             "rows": rows,
+            "dwell": _dwell(raw.get("dwell")),
             "at": _at(raw.get("at")),
         }
 
@@ -174,6 +187,10 @@ def _merge_prefs(server, incoming):
     # only changed the accent does not wipe the other one's arrangement.
     if not newer["rows"] and older["rows"]:
         newer = dict(newer, rows=older["rows"])
+    # 0 is "never chose one", so a device from before this setting existed
+    # does not reset the other one's speed.
+    if not newer["dwell"] and older["dwell"]:
+        newer = dict(newer, dwell=older["dwell"])
     return newer
 
 

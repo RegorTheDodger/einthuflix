@@ -706,6 +706,59 @@ html[data-theme="slate"] { --saffron: #96a4b4; --saffron-deep: #626e7d; --saffro
 
 .bb-host { position: relative; }
 
+/* the hero carousel: one film at a time, chosen with the dots */
+.bb-carousel { display: grid; }
+.bb-carousel .bb {
+  grid-area: 1 / 1;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 520ms var(--ease), visibility 0s linear 520ms;
+}
+.bb-carousel .bb.is-live {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 520ms var(--ease), visibility 0s;
+}
+.bb-dots {
+  position: absolute;
+  left: max(22px, 5vw);
+  bottom: 26px;
+  z-index: 3;
+  display: flex;
+  gap: 7px;
+}
+.bb-dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(245, 237, 227, .3);
+  background: color-mix(in srgb, var(--hair) 30%, transparent);
+  cursor: pointer;
+  transition: width 220ms var(--ease), background 220ms var(--ease);
+}
+.bb-dot:hover { background: rgba(245, 237, 227, .62); }
+.bb-dot.is-live { width: 22px; background: var(--saffron); }
+
+/* how long this film has left before the next one */
+.bb-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(245, 237, 227, .12);
+  background: color-mix(in srgb, var(--hair) 12%, transparent);
+  overflow: hidden;
+}
+.bb-progress i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--saffron);
+}
+
 .bb {
   position: relative;
   display: flex;
@@ -718,6 +771,13 @@ html[data-theme="slate"] { --saffron: #96a4b4; --saffron-deep: #626e7d; --saffro
     radial-gradient(65% 80% at 88% 10%, rgba(var(--saffron-rgb), .17), transparent 62%),
     radial-gradient(80% 90% at 4% 0%, rgba(var(--saffron-rgb), .13), transparent 58%),
     linear-gradient(158deg, #191110 0%, #0c090a 52%, #120c0d 100%);
+  background:
+    radial-gradient(65% 80% at 88% 10%, rgba(var(--saffron-rgb), .17), transparent 62%),
+    radial-gradient(80% 90% at 4% 0%, rgba(var(--saffron-rgb), .13), transparent 58%),
+    linear-gradient(158deg,
+      color-mix(in srgb, var(--ink-3) 90%, #000) 0%,
+      color-mix(in srgb, var(--ink-0) 76%, #000) 52%,
+      color-mix(in srgb, var(--ink-1) 84%, #000) 100%);
 }
 
 /* the empty hero: a film-strip ruling and a soft hatch in the far corner */
@@ -1721,6 +1781,31 @@ html[data-theme="slate"] { --saffron: #96a4b4; --saffron-deep: #626e7d; --saffro
 .radio:hover { color: var(--paper); }
 
 /* ------------------------------------------------------------ home rows */
+
+/* how long the hero holds each film */
+
+.dwell-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.dwell-field label { font-size: 14px; color: var(--paper-dim); }
+.dwell-field input {
+  width: 110px;
+  padding: 10px 12px;
+  background: var(--ink-0);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  transition: border-color var(--ease), box-shadow var(--ease);
+}
+.dwell-field input:focus {
+  outline: 0;
+  border-color: var(--saffron);
+  box-shadow: 0 0 0 3px rgba(var(--saffron-rgb), .12);
+}
 
 .row-list {
   list-style: none;

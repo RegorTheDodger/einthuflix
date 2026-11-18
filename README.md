@@ -54,8 +54,8 @@ accounts. No build step and no client-side framework.
 
 **The catalogue.** EinthuFlix is built on einthusan's listings, one A–Z index per
 language. The home page reads the browse pages for the chosen language (or all
-eight at once) and turns them into a featured film, Most Watched, Staff Picks and
-Recently Added.
+eight at once) and turns them into a carousel of ten films, one per row at a
+time, followed by Most Watched, Staff Picks and Recently Added.
 
 **Search.** einthusan has no full-text API, so a search is a prefix walk over a
 language's index. If nothing matches the whole phrase, the last word is shortened
@@ -71,7 +71,13 @@ so instead of showing an empty frame.
 
 **Home rows.** Continue watching and My list open the home page; the discovery
 rows for the chosen language follow. Settings → Home page rows chooses which rows
-appear and in what order, kept in the browser beside your list.
+appear and in what order, kept in the browser beside your list. The carousel at
+the top draws its films from those rows and drops the ones that are switched
+off; with every discovery row hidden it gives way to the search banner.
+
+**Carousel speed.** Each film holds for ten seconds with a countdown along the
+bottom edge, and a dot per film to jump straight to one. Settings → Carousel
+speed changes the hold (one to six hundred seconds) and the countdown follows.
 
 **My List.** The + on any poster saves the film locally, instantly, with no
 account needed. Removing one writes a timestamped tombstone so a stale device
@@ -316,7 +322,8 @@ refused; `EINTHUFLIX_ALLOW_SIGNUP=open` opens it up (see
 - Press the + on any poster to add it to My List.
 - Watch ten seconds and the film appears under Continue watching.
 - In `/settings`, **Default language** sets what search starts on, and
-  **Home page rows** untick or reorders the home shelves.
+  **Home page rows** untick or reorders the home shelves, and **Carousel speed**
+  sets how long each film in the hero holds.
 - **Colour** in `/settings` picks one of fifteen palettes for the whole site —
   the accent, and the room it sits in (inks, paper, hairlines, scrims) are all
   mixed from it — kept in the browser.

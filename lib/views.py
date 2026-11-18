@@ -305,37 +305,99 @@ def billboard_fallback(top_lang="tamil"):
     )
 
 
-def billboard_item(item, kicker="Now showing"):
-    """The hero, painted from the catalogue rather than from a saved list.
+def billboard_slide(item, index, row_id=""):
+    """One film of the hero carousel.
 
-    Mirrors the markup app.js writes into the same host, so the swap from this
-    to a personalised film does not shift anything on the page.
+    Only the first slide carries image URLs; the rest fetch theirs when they
+    come round, so the home page is not ten backdrops heavier. The row id
+    stays on the slide so a row hidden in settings can drop its films.
     """
+    live = index == 0
     cover = item.get("cover") or ""
     href = watch_href(item)
     chips = "".join('<span class="bb-chip">%s</span>' % esc(bit)
                     for bit in (item.get("year"), item.get("lang")) if bit)
 
-    parts = ['<section class="bb">']
-    if cover:
-        parts.append('<div class="bb-art" aria-hidden="true">'
-                     '<img src="%s" alt=""></div>' % esc(cover))
-    parts.append('<div class="bb-scrim" aria-hidden="true"></div>')
-    parts.append('<div class="bb-inner">'
-                 '<p class="bb-kicker">%s</p>'
-                 '<h1 class="bb-title">%s</h1>'
-                 % (esc(kicker), esc(item["title"])))
-    if chips:
-        parts.append('<p class="bb-meta">%s</p>' % chips)
-    parts.append('<div class="bb-actions">'
-                 '<a class="btn play" href="%s">%sPlay</a>'
-                 '<a class="btn ghost" href="%s">More info</a>'
-                 "</div></div>" % (esc(href), ICON_PLAY, esc(href)))
-    if cover:
-        parts.append('<div class="bb-poster" aria-hidden="true">'
-                     '<img src="%s" alt=""></div>' % esc(cover))
-    parts.append("</section>")
-    return "".join(parts)
+    def art(css_class):
+        if not cover:
+            return ""
+        source = ('src="%s"' if live else 'data-src="%s"') % esc(cover)
+        return ('<div class="%s" aria-hidden="true"><img %s alt=""></div>'
+                % (css_class, source))
+
+    # one h1 per page: the live slide carries it, the others a plain block
+    title = ('<h1 class="bb-title">%s</h1>' if live
+             else '<div class="bb-title">%s</div>')
+
+    return (
+        '<section class="bb%s" data-slide="%d" data-row="%s">'
+        '%s<div class="bb-scrim" aria-hidden="true"></div>'
+        '<div class="bb-inner">'
+        '<p class="bb-kicker">Now showing</p>'
+        '%s%s'
+        '<div class="bb-actions">'
+        '<a class="btn play" href="%s">%sPlay</a>'
+        '<a class="btn ghost" href="%s">More info</a>'
+        '</div></div>%s</section>'
+        % (" is-live" if live else "", index, esc(row_id),
+           art("bb-art"), title % esc(item["title"]),
+           '<p class="bb-meta">%s</p>' % chips if chips else "",
+           esc(href), ICON_PLAY, esc(href), art("bb-poster")))
+
+
+def hero_picks(shelves, limit=30):
+    """Films for the hero, as (row id, film) pairs, one film per row at a time.
+
+    The row id travels with the film because a row can be hidden in settings,
+    and a hidden row should take its films off the hero too. More candidates
+    than the reel needs are offered, so ten films are still left after that.
+    """
+    rows = []
+    for shelf_data in shelves or []:
+        items = [one for one in (shelf_data.get("items") or [])
+                 if one.get("title")]
+        if not items:
+            continue
+        rows.append(("browse-%d" % len(rows), items))
+
+    seen, out, depth = set(), [], 0
+    while len(out) < limit and any(depth < len(items) for _row, items in rows):
+        for row_id, items in rows:
+            if depth >= len(items):
+                continue
+            item = items[depth]
+            key = item.get("id") or item.get("title")
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append((row_id, item))
+            if len(out) >= limit:
+                break
+        depth += 1
+    return out
+
+
+def billboard_carousel(picks):
+    """The home hero: the films from the rails, one at a time.
+
+    The dots and the countdown bar are built by static/app.js once it knows
+    which rows are still shown, so hiding a row can shorten the reel without
+    the markup claiming a length it no longer has.
+    """
+    slides = "".join(billboard_slide(item, index, row_id)
+                     for index, (row_id, item) in enumerate(picks))
+    return ('<div class="bb-carousel" data-bb-carousel>%s'
+            '<div class="bb-dots" data-bb-dots></div>'
+            '<div class="bb-progress" data-bb-progress aria-hidden="true">'
+            '<i></i></div></div>' % slides)
+
+
+def billboard_with_fallback(picks, top_lang="tamil"):
+    """The carousel, plus the banner it becomes when every row is hidden."""
+    if not picks:
+        return billboard_fallback(top_lang)
+    return ('%s<div class="bb-fallback" data-bb-fallback hidden>%s</div>'
+            % (billboard_carousel(picks), billboard_fallback(top_lang)))
 
 
 def home_page(top_lang):
@@ -347,8 +409,8 @@ def home_page(top_lang):
     except Exception:
         browse = {"featured": [], "shelves": []}
 
-    featured = browse.get("featured") or []
-    hero = billboard_item(featured[0]) if featured else billboard_fallback(top_lang)
+    picks = hero_picks((browse.get("shelves") or [])[:3])
+    hero = billboard_with_fallback(picks, top_lang)
 
     rails = []
     for shelf_data in (browse.get("shelves") or [])[:3]:
@@ -541,6 +603,23 @@ def theme_panel():
         '<div class="swatches" data-theme-list>%s</div></section>' % swatches)
 
 
+def dwell_panel():
+    """How long the hero holds each film; the browser applies and keeps it."""
+    return (
+        '<section class="panel dwell-panel" data-dwell-panel>'
+        '<h2>Carousel speed</h2>'
+        '<p class="panel-note">How long the home page hero holds each film '
+        "before moving on, in whole seconds — ten by default. The bar along "
+        "the bottom of the carousel counts it down.</p>"
+        '<div class="dwell-field">'
+        '<label for="dwell-seconds">Seconds per film</label>'
+        '<input id="dwell-seconds" type="number" inputmode="numeric" '
+        'min="1" max="600" step="1" value="10" data-dwell-input>'
+        '<button class="btn ghost tiny" type="button" data-dwell-reset>'
+        "Reset to 10</button></div></section>"
+    )
+
+
 def settings_page(top_lang):
     rows = "".join(
         '<label class="radio"><input type="radio" name="toplang" value="%s"%s>'
@@ -551,7 +630,7 @@ def settings_page(top_lang):
             '<section class="page-head">'
             '<p class="eyebrow">Preferences</p>'
             '<h1 class="h1">Settings</h1></section>'
-            + theme_panel() +
+            + theme_panel() + dwell_panel() +
             '<section class="panel"><h2>Default language</h2>'
             '<p class="panel-note">The language the search box starts on. '
             "You can still switch it per search.</p>"

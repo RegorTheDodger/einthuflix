@@ -424,58 +424,139 @@ function fill(name, items, emptyText) {
 
 /* -------------------------------------------------------------- billboard */
 
-let fallbackBillboard = "";
-let shownBillboard = null;
+/* The hero is a carousel of films taken from the rails underneath it, and only
+ * the rows still switched on in settings: hiding a row takes its films off the
+ * top of the page too. When that leaves nothing, the plain banner takes over.
+ * Each film holds for ten seconds unless another speed is picked on /settings,
+ * with a countdown along the bottom edge. The dots are built here so their
+ * number matches the reel. */
+const BILLBOARD_LIMIT = 10;
 
-function billboardHtml(m, kicker) {
-  const href = esc(watchHref(m));
-  const title = esc(m.title);
-  const cover = m.cover ? '<img src="' + esc(m.cover) + '" alt="">' : "";
-  const chips = [m.year, m.lang].filter(Boolean)
-    .map((b) => '<span class="bb-chip">' + esc(b) + "</span>").join("");
+/* How long each film holds. Ten seconds unless somebody picks another number
+ * on /settings; the countdown bar is drawn from the same value. */
+const DWELL_KEY = "iml:dwell";
+const DWELL_DEFAULT = 10;
+const DWELL_MIN = 1;
+const DWELL_MAX = 600;
 
-  return (
-    '<section class="bb">' +
-    '<div class="bb-art" aria-hidden="true">' + cover + "</div>" +
-    '<div class="bb-scrim" aria-hidden="true"></div>' +
-    '<div class="bb-inner">' +
-    '<p class="bb-kicker">' + esc(kicker || "From your list") + "</p>" +
-    '<h1 class="bb-title">' + title + "</h1>" +
-    (chips ? '<p class="bb-meta">' + chips + "</p>" : "") +
-    '<div class="bb-actions">' +
-    '<a class="btn play" href="' + href + '">' + SVG_PLAY + "Play</a>" +
-    '<a class="btn ghost" href="' + href + '">More info</a>' +
-    "</div></div>" +
-    '<div class="bb-poster" aria-hidden="true">' + cover + "</div>" +
-    "</section>"
-  );
+function dwellValue(seconds) {
+  const n = Math.round(Number(seconds));
+  if (!isFinite(n)) return DWELL_DEFAULT;
+  if (n < DWELL_MIN) return DWELL_MIN;
+  return n > DWELL_MAX ? DWELL_MAX : n;
 }
 
-/* The newest saved film takes the hero, falling back to the last film played
- * so a fresh list is not an empty page. Only rewritten when the choice
- * actually changes, so the image does not reload on every paint. */
-function renderBillboard() {
+function savedDwell() {
+  try {
+    const raw = localStorage.getItem(DWELL_KEY);
+    return raw === null || raw === "" ? DWELL_DEFAULT : dwellValue(raw);
+  } catch (e) {
+    return DWELL_DEFAULT;
+  }
+}
+
+function storeDwell(seconds) {
+  try {
+    localStorage.setItem(DWELL_KEY, String(dwellValue(seconds)));
+  } catch (e) {
+    /* private mode: the choice lasts this page only */
+  }
+}
+
+function wireBillboard() {
   const host = document.querySelector("[data-billboard]");
   if (!host) return;
-  if (!fallbackBillboard) fallbackBillboard = host.innerHTML;
 
-  let item = getList()[0] || null;
-  let kicker = "From your list";
+  const carousel = host.querySelector("[data-bb-carousel]");
+  const fallback = host.querySelector("[data-bb-fallback]");
+  const hiddenRows = new Set(
+    savedRows().filter((row) => row.on === false).map((row) => row.id)
+  );
 
-  if (!item) {
-    item = continueWatching()[0] || null;
-    if (item) kicker = "Continue watching";
+  /* the server sends extra films so ten are still left after filtering */
+  const kept = Array.from(host.querySelectorAll("[data-slide]"))
+    .filter((slide) => !hiddenRows.has(slide.dataset.row || ""))
+    .slice(0, BILLBOARD_LIMIT);
+  host.querySelectorAll("[data-slide]").forEach((slide) => {
+    if (kept.indexOf(slide) === -1) slide.remove();
+  });
+
+  if (!carousel || !kept.length) {
+    if (carousel) carousel.hidden = true;
+    if (fallback) fallback.hidden = false;
+    return;
   }
 
-  const key = item ? item.id + "|" + kicker : "";
-  if (key === shownBillboard) return;
-  shownBillboard = key;
-  host.innerHTML = item ? billboardHtml(item, kicker) : fallbackBillboard;
+  const dotsBox = carousel.querySelector("[data-bb-dots]");
+  const bar = carousel.querySelector("[data-bb-progress] i");
+  let at = 0;
+  let timer = 0;
+
+  function load(slide) {
+    slide.querySelectorAll("img[data-src]").forEach((img) => {
+      if (!img.getAttribute("src")) img.setAttribute("src", img.dataset.src);
+    });
+  }
+
+  /* the hold, read each time so a change on /settings is picked up */
+  function hold() {
+    return savedDwell() * 1000;
+  }
+
+  /* restart the countdown from empty every time the film changes */
+  function countdown() {
+    if (!bar || kept.length < 2) return;
+    bar.style.transition = "none";
+    bar.style.width = "0%";
+    void bar.offsetWidth;
+    bar.style.transition = "width " + hold() + "ms linear";
+    bar.style.width = "100%";
+  }
+
+  function show(next, byHand) {
+    at = (next + kept.length) % kept.length;
+    kept.forEach((slide, n) => slide.classList.toggle("is-live", n === at));
+    dots.forEach((dot, n) => {
+      dot.classList.toggle("is-live", n === at);
+      dot.setAttribute("aria-current", n === at ? "true" : "false");
+    });
+    load(kept[at]);
+    countdown();
+    if (byHand) start();
+  }
+
+  function stop() {
+    window.clearInterval(timer);
+  }
+
+  function start() {
+    stop();
+    if (kept.length > 1) {
+      timer = window.setInterval(() => show(at + 1), hold());
+    }
+  }
+
+  const dots = kept.map((slide, n) => {
+    const dot = document.createElement("button");
+    const title = slide.querySelector(".bb-title");
+    dot.type = "button";
+    dot.className = "bb-dot";
+    dot.dataset.bbDot = String(n);
+    dot.setAttribute("aria-current", "false");
+    dot.setAttribute("aria-label",
+      "Show " + ((title && title.textContent) || "film " + (n + 1)));
+    dot.addEventListener("click", () => show(n, true));
+    if (dotsBox) dotsBox.appendChild(dot);
+    return dot;
+  });
+
+  if (kept.length < 2 && dotsBox) dotsBox.hidden = true;
+  load(kept[0]);
+  show(0);
+  start();
 }
 
 function paint() {
-  renderBillboard();
-
   const list = getList();
   const saved = new Set(list.map((m) => m.id));
 
@@ -792,7 +873,12 @@ function touchPrefs() {
 }
 
 function localPrefs() {
-  return { theme: savedTheme(), rows: savedRows(), at: prefsAt() };
+  return {
+    theme: savedTheme(),
+    rows: savedRows(),
+    dwell: savedDwell(),
+    at: prefsAt()
+  };
 }
 
 function applyPrefs(prefs) {
@@ -800,6 +886,7 @@ function applyPrefs(prefs) {
   try {
     localStorage.setItem(THEME_KEY, prefs.theme || "saffron");
     if (Array.isArray(prefs.rows) && prefs.rows.length) storeRows(prefs.rows);
+    if (Number(prefs.dwell) >= DWELL_MIN) storeDwell(prefs.dwell);
     localStorage.setItem(PREFS_AT, String(prefs.at));
   } catch (e) {
     return;
@@ -1207,6 +1294,48 @@ function wireTheme() {
   });
 }
 
+/* ---------------------------------------------- carousel speed setting */
+
+function wireDwell() {
+  const input = document.querySelector("[data-dwell-input]");
+  if (!input) return;
+
+  const show = () => {
+    input.value = String(savedDwell());
+  };
+
+  const save = () => {
+    const seconds = dwellValue(input.value);
+    input.value = String(seconds);
+    storeDwell(seconds);
+    touchPrefs();
+    syncAccount();
+  };
+
+  show();
+  input.addEventListener("change", save);
+  /* number fields do not always commit on blur, so save as they type too */
+  let pending = 0;
+  input.addEventListener("input", () => {
+    window.clearTimeout(pending);
+    pending = window.setTimeout(save, 500);
+  });
+  input.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    window.clearTimeout(pending);
+    save();
+  });
+  const reset = document.querySelector("[data-dwell-reset]");
+  if (reset) {
+    reset.addEventListener("click", () => {
+      input.value = String(DWELL_DEFAULT);
+      save();
+    });
+  }
+  document.addEventListener("prefs:applied", show);
+}
+
 normaliseList();
 paint();
 wireAuth();
@@ -1215,10 +1344,12 @@ wirePlayer();
 wireVidspark();
 wireRails();
 wireBar();
+wireBillboard();
 applyHomeRows();
 wireRowSettings();
 applyTheme(savedTheme());
 wireTheme();
+wireDwell();
 window.addEventListener("pageshow", () => {
   paint();
   wireRails();
