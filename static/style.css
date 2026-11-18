@@ -430,35 +430,6 @@ select option { background: var(--ink-2); color: var(--paper); }
   margin: 26px 0 0;
 }
 
-/* ------------------------------------------------------------------- foot */
-
-.foot {
-  position: relative;
-  z-index: 1;
-  border-top: 1px solid var(--line);
-  margin-top: clamp(48px, 7vw, 96px);
-  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, .35));
-}
-.foot-inner {
-  max-width: var(--page-max);
-  margin: 0 auto;
-  padding: clamp(30px, 4vw, 50px) var(--gutter);
-  display: flex;
-  justify-content: center;
-}
-.foot-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--paper-dim);
-  transition: color var(--ease);
-}
-.foot-link:hover { color: var(--paper); }
-.foot-icon { width: 15px; height: 15px; flex: none; }
 
 /* --------------------------------------------------------------- palettes */
 

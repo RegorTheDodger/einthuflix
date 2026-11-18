@@ -183,8 +183,8 @@ the `/auth/*` endpoints, `/api/sync` (GET and POST), `/api/sync/clear`,
 arguments, resolves what is being watched, calls accounts and sync, and hands a
 body to `views`.
 
-**`lib/views.py`** — every piece of HTML: the page shell (head, nav, footer), the
-home page with its rows, search with language tabs, the watch page and its
+**`lib/views.py`** — every piece of HTML: the page shell (head, nav), the home
+page with its rows, search with language tabs, the watch page and its
 player, My List, settings, and convert, plus the shared pieces (`shelf()`,
 `card()`, language tabs, the hero fallback, escaping). Nothing here touches the
 network; it renders what it is given.
@@ -324,8 +324,8 @@ refused; `EINTHUFLIX_ALLOW_SIGNUP=open` opens it up (see
 - Press the + on any poster to add it to My List.
 - Watch ten seconds and the film appears under Continue watching.
 - In `/settings`, **Default language** sets what search starts on, and
-  **Home page rows** untick or reorders the home shelves, and **Carousel speed**
-  sets how long each film in the hero holds.
+  **Home page rows** untick or reorders the home shelves, **Carousel speed**
+  sets how long each film in the hero holds, and **Source** links to GitHub.
 - **Colour** in `/settings` picks one of fifteen palettes for the whole site —
   the accent, and the room it sits in (inks, paper, hairlines, scrims) are all
   mixed from it — kept in the browser.
