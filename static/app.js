@@ -494,6 +494,7 @@ function personalSlide(host) {
   const slide = document.createElement("section");
   slide.className = "bb is-live";
   slide.dataset.slide = "personal";
+  slide.dataset.id = item.id;
   slide.innerHTML =
     art +
     '<div class="bb-scrim" aria-hidden="true"></div>' +
@@ -525,9 +526,15 @@ function wireBillboard() {
     savedRows().filter((row) => row.on === false).map((row) => row.id)
   );
 
-  /* the server sends extra films so ten are still left after filtering */
+  /* the server sends extra films so ten are still left after filtering; the
+   * visitor's own film is already the first slide, so drop its repeat */
+  const personal = host.querySelector('[data-slide="personal"]');
+  const ownId = (personal && personal.dataset.id) || "";
   const kept = Array.from(host.querySelectorAll("[data-slide]"))
-    .filter((slide) => !hiddenRows.has(slide.dataset.row || ""))
+    .filter((slide) => slide === personal ||
+      !hiddenRows.has(slide.dataset.row || ""))
+    .filter((slide) => slide === personal || !ownId ||
+      slide.dataset.id !== ownId)
     .slice(0, BILLBOARD_LIMIT);
   host.querySelectorAll("[data-slide]").forEach((slide) => {
     if (kept.indexOf(slide) === -1) slide.remove();

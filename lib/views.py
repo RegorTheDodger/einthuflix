@@ -330,7 +330,7 @@ def billboard_slide(item, index, row_id=""):
              else '<div class="bb-title">%s</div>')
 
     return (
-        '<section class="bb%s" data-slide="%d" data-row="%s">'
+        '<section class="bb%s" data-slide="%d" data-row="%s" data-id="%s">'
         '%s<div class="bb-scrim" aria-hidden="true"></div>'
         '<div class="bb-inner">'
         '<p class="bb-kicker">Now showing</p>'
@@ -340,6 +340,7 @@ def billboard_slide(item, index, row_id=""):
         '<a class="btn ghost" href="%s">More info</a>'
         '</div></div>%s</section>'
         % (" is-live" if live else "", index, esc(row_id),
+           esc(item.get("id") or ""),
            art("bb-art"), title % esc(item["title"]),
            '<p class="bb-meta">%s</p>' % chips if chips else "",
            esc(href), ICON_PLAY, esc(href), art("bb-poster")))
