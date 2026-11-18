@@ -228,6 +228,8 @@ select option { background: var(--ink-2); color: var(--paper); }
   inset: 0 0 auto 0;
   z-index: 60;
   background: linear-gradient(to bottom, rgba(10, 8, 9, .94), rgba(10, 8, 9, 0));
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--ink-0) 94%, transparent), transparent);
   transition: background var(--ease), border-color var(--ease);
   border-bottom: 1px solid transparent;
 }
@@ -242,6 +244,7 @@ select option { background: var(--ink-2); color: var(--paper); }
 }
 .nav.solid {
   background: rgba(10, 8, 9, .93);
+  background: color-mix(in srgb, var(--ink-0) 93%, transparent);
   -webkit-backdrop-filter: saturate(130%) blur(16px);
   backdrop-filter: saturate(130%) blur(16px);
 }
@@ -475,8 +478,31 @@ html[data-theme="sand"] { --saffron: #d3bb9c; --saffron-deep: #9b8463; --saffron
 html[data-theme="ice"] { --saffron: #a8bed6; --saffron-deep: #71889f; --saffron-rgb: 168, 190, 214; }
 html[data-theme="slate"] { --saffron: #96a4b4; --saffron-deep: #626e7d; --saffron-rgb: 150, 164, 180; }
 
+/* A palette is more than its accent: the room is mixed from it too, so a
+ * violet theme sits in a violet-black room rather than a saffron one. Mixed
+ * inside @supports so a browser without color-mix keeps the warm tokens. */
 @supports (background: color-mix(in srgb, red 82%, #fff)) {
-  :root { --accent-hover: color-mix(in srgb, var(--saffron) 82%, #fff); }
+  :root {
+    --accent-hover: color-mix(in srgb, var(--saffron) 82%, #fff);
+
+    /* the room: near-black carrying a few percent of the accent */
+    --ink-0: color-mix(in srgb, var(--saffron) 6%, #060607);
+    --ink-1: color-mix(in srgb, var(--saffron) 8%, #0a0a0b);
+    --ink-2: color-mix(in srgb, var(--saffron) 10%, #0f0f11);
+    --ink-3: color-mix(in srgb, var(--saffron) 13%, #16161a);
+
+    /* the paper picks up the same hue, faintly */
+    --paper: color-mix(in srgb, var(--saffron) 5%, #f5ede3);
+    --paper-dim: color-mix(in srgb, var(--saffron) 7%, #b9a99c);
+    --paper-faint: color-mix(in srgb, var(--saffron) 9%, #86766a);
+
+    /* hairlines and fills: the opacities above, hue from the accent */
+    --hair: color-mix(in srgb, var(--saffron) 22%, #f5ede3);
+    --line: color-mix(in srgb, var(--hair) 10%, transparent);
+    --line-2: color-mix(in srgb, var(--hair) 20%, transparent);
+    --fill: color-mix(in srgb, var(--hair) 5.5%, transparent);
+    --fill-2: color-mix(in srgb, var(--hair) 11%, transparent);
+  }
 }
 
 /* ---------------------------------------------------------------- swatches */
@@ -564,6 +590,7 @@ html[data-theme="slate"] { --saffron: #96a4b4; --saffron-deep: #626e7d; --saffro
   gap: 8px;
   padding: 7px 8px 7px 16px;
   background: rgba(21, 16, 19, .82);
+  background: color-mix(in srgb, var(--ink-2) 82%, transparent);
   border: 1px solid var(--line-2);
   border-radius: var(--r-pill);
   transition: border-color var(--ease), box-shadow var(--ease);
@@ -977,6 +1004,7 @@ html[data-theme="slate"] { --saffron: #96a4b4; --saffron-deep: #626e7d; --saffro
   margin-top: -21px;
   border-radius: 50%;
   background: rgba(15, 11, 13, .88);
+  background: color-mix(in srgb, var(--ink-1) 88%, transparent);
   border: 1px solid var(--line-2);
   color: var(--paper);
   -webkit-backdrop-filter: blur(10px);
@@ -1062,6 +1090,10 @@ html[data-theme="slate"] { --saffron: #96a4b4; --saffron-deep: #626e7d; --saffro
     rgba(10, 8, 9, .9) 0%,
     rgba(10, 8, 9, .35) 34%,
     rgba(10, 8, 9, 0) 66%);
+  background: linear-gradient(to top,
+    color-mix(in srgb, var(--ink-0) 90%, transparent) 0%,
+    color-mix(in srgb, var(--ink-0) 35%, transparent) 34%,
+    transparent 66%);
   opacity: 0;
   transition: opacity var(--ease);
 }
@@ -1160,6 +1192,7 @@ html[data-theme="slate"] { --saffron: #96a4b4; --saffron-deep: #626e7d; --saffro
   height: 30px;
   border-radius: 50%;
   background: rgba(10, 8, 9, .62);
+  background: color-mix(in srgb, var(--ink-0) 62%, transparent);
   border: 1px solid var(--line-2);
   color: var(--paper);
   -webkit-backdrop-filter: blur(8px);
@@ -1191,6 +1224,7 @@ html[data-theme="slate"] { --saffron: #96a4b4; --saffron-deep: #626e7d; --saffro
   height: 24px;
   border-radius: 50%;
   background: rgba(10, 8, 9, .66);
+  background: color-mix(in srgb, var(--ink-0) 66%, transparent);
   border: 1px solid var(--line-2);
   color: var(--paper-dim);
   font-size: 14px;
@@ -1318,6 +1352,9 @@ html[data-theme="slate"] { --saffron: #96a4b4; --saffron-deep: #626e7d; --saffro
   inset: 0;
   background: radial-gradient(62% 62% at 50% 50%,
     rgba(10, 8, 9, .3), rgba(10, 8, 9, .86));
+  background: radial-gradient(62% 62% at 50% 50%,
+    color-mix(in srgb, var(--ink-0) 30%, transparent),
+    color-mix(in srgb, var(--ink-0) 86%, transparent));
 }
 .gate-play {
   position: relative;
@@ -1434,6 +1471,13 @@ html[data-theme="slate"] { --saffron: #96a4b4; --saffron-deep: #626e7d; --saffro
     linear-gradient(90deg, rgba(10, 8, 9, .95) 0%, rgba(10, 8, 9, .55) 55%,
       rgba(10, 8, 9, .8) 100%),
     linear-gradient(0deg, var(--ink-0) 0%, rgba(10, 8, 9, 0) 68%);
+  /* the same scrim, mixed from the room — and the room carries the accent */
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--ink-0) 95%, transparent) 0%,
+      color-mix(in srgb, var(--ink-0) 55%, transparent) 55%,
+      color-mix(in srgb, var(--ink-0) 80%, transparent) 100%),
+    linear-gradient(0deg, var(--ink-0) 0%, transparent 68%);
 }
 .stage-inner {
   width: 100%;
