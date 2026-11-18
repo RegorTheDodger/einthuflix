@@ -129,6 +129,8 @@ def page(title, body, top_lang="tamil"):
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         '<meta name="color-scheme" content="dark">'
         '<meta name="theme-color" content="#0a0809">'
+        '<script>try{document.documentElement.setAttribute("data-theme",'
+        'localStorage.getItem("iml:theme")||"saffron")}catch(e){}</script>'
         '<link rel="preconnect" href="https://fonts.googleapis.com">'
         '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
         '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
@@ -167,11 +169,12 @@ def page(title, body, top_lang="tamil"):
         "</div></header>"
         '<main class="page" data-lang="%s">%s</main>'
         '<footer class="foot"><div class="foot-inner">'
-        '<p class="foot-mark">Einthu<em>Flix</em></p>'
-        '<p class="foot-note">Tamil &middot; Telugu &middot; Malayalam '
-        '&middot; Kannada &middot; Hindi &middot; Bengali &middot; Marathi '
-        '&middot; Punjabi</p>'
-        '<p class="foot-fine">South Asian cinema, streaming.</p>'
+        '<a class="foot-link" href="https://github.com/RegorTheDodger/einthuflix"'
+        ' target="_blank" rel="noopener noreferrer"'
+        ' aria-label="Source on GitHub">'
+        '<svg class="foot-icon" viewBox="0 0 16 16" width="16" height="16"'
+        ' aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>'
+        '<span>Source on GitHub</span></a>'
         "</div></footer>"
         '<script src="/static/motion.js"></script>'
         '<script src="/static/app.js?v=2"></script>'
@@ -503,6 +506,41 @@ def rows_panel(top_lang):
         'Reset to default</button></section>' % items)
 
 
+THEMES = [
+    ("saffron", "Saffron", "#f2a33c"),
+    ("ember", "Ember", "#e56b3a"),
+    ("crimson", "Crimson", "#e0433f"),
+    ("rose", "Rose", "#e86a92"),
+    ("orchid", "Orchid", "#d267d8"),
+    ("violet", "Violet", "#a78bfa"),
+    ("indigo", "Indigo", "#7f8cf6"),
+    ("azure", "Azure", "#4aa8f0"),
+    ("teal", "Teal", "#3fbcae"),
+    ("emerald", "Emerald", "#54c288"),
+    ("lime", "Lime", "#a3c94f"),
+    ("gold", "Gold", "#d9b544"),
+    ("sand", "Sand", "#d3bb9c"),
+    ("ice", "Ice", "#a8bed6"),
+    ("slate", "Slate", "#96a4b4"),
+]
+
+
+def theme_panel():
+    """Fifteen accents; the choice is applied in the browser and kept there."""
+    swatches = "".join(
+        '<button class="swatch" type="button" data-theme-option="%s"'
+        ' style="--swatch:%s" aria-label="%s" title="%s"'
+        ' aria-pressed="false"><span></span></button>'
+        % (key, hexv, name, name)
+        for key, name, hexv in THEMES)
+    return (
+        '<section class="panel theme-panel" data-theme-panel>'
+        '<h2>Colour</h2>'
+        '<p class="panel-note">The accent the whole site uses. Kept in this '
+        'browser.</p>'
+        '<div class="swatches" data-theme-list>%s</div></section>' % swatches)
+
+
 def settings_page(top_lang):
     rows = "".join(
         '<label class="radio"><input type="radio" name="toplang" value="%s"%s>'
@@ -513,6 +551,7 @@ def settings_page(top_lang):
             '<section class="page-head">'
             '<p class="eyebrow">Preferences</p>'
             '<h1 class="h1">Settings</h1></section>'
+            + theme_panel() +
             '<section class="panel"><h2>Default language</h2>'
             '<p class="panel-note">The language the search box starts on. '
             "You can still switch it per search.</p>"

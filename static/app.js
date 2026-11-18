@@ -1068,6 +1068,52 @@ function wireRowSettings() {
   paintRows();
 }
 
+/* --------------------------------------------------------------- themes */
+
+/* The accent chosen on /settings. The attribute is set by a one-line script in
+ * <head> before the first paint, so a reload never flashes the default. */
+const THEME_KEY = "iml:theme";
+
+function savedTheme() {
+  try {
+    return localStorage.getItem(THEME_KEY) || "saffron";
+  } catch (e) {
+    return "saffron";
+  }
+}
+
+function applyTheme(name) {
+  document.documentElement.setAttribute("data-theme", name || "saffron");
+}
+
+function wireTheme() {
+  const list = document.querySelector("[data-theme-list]");
+  if (!list) return;
+
+  function mark(name) {
+    list.querySelectorAll("[data-theme-option]").forEach((button) => {
+      button.setAttribute(
+        "aria-pressed",
+        button.dataset.themeOption === name ? "true" : "false"
+      );
+    });
+  }
+
+  mark(savedTheme());
+  list.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-theme-option]");
+    if (!button) return;
+    const name = button.dataset.themeOption;
+    applyTheme(name);
+    try {
+      localStorage.setItem(THEME_KEY, name);
+    } catch (e) {
+      /* private mode: the choice lasts this page only */
+    }
+    mark(name);
+  });
+}
+
 normaliseList();
 paint();
 wireAuth();
@@ -1078,6 +1124,8 @@ wireRails();
 wireBar();
 applyHomeRows();
 wireRowSettings();
+applyTheme(savedTheme());
+wireTheme();
 window.addEventListener("pageshow", () => {
   paint();
   wireRails();

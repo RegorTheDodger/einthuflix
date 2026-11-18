@@ -312,6 +312,8 @@ refused; `EINTHUFLIX_ALLOW_SIGNUP=open` opens it up (see
 - Watch ten seconds and the film appears under Continue watching.
 - In `/settings`, **Default language** sets what search starts on, and
   **Home page rows** untick or reorders the home shelves.
+- **Colour** in `/settings` picks one of fifteen accents for the whole site,
+  kept in the browser.
 - Sign in and the next visit merges this browser's list with the account's.
 
 ## Configuration
